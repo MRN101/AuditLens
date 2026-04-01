@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+client/dist/
+dist/
+
+# Uploads (user-generated)
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Logs
+*.log
+server/error.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+policy-engine/venv/
+*.egg-info/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.tgz
+*.tar.gz

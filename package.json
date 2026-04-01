@@ -1,0 +1,33 @@
+{
+  "name": "finance-auditor",
+  "version": "1.0.0",
+  "description": "AuditLens — Policy-First AI Expense Auditor (MERN Stack)",
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"npm run dev:server\" \"npm run dev:client\"",
+    "build:client": "cd client && npm run build",
+    "start:server": "cd server && npm start",
+    "start:policy-engine": "cd policy-engine && .\\venv\\Scripts\\activate && python app.py",
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "lint": "cd client && npx eslint src/",
+    "clean": "cd client && rd /s /q dist 2>nul & cd ../server && del error.log 2>nul"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "fintech",
+    "mern",
+    "ai",
+    "expense-auditor",
+    "gemini",
+    "ocr"
+  ],
+  "author": "AuditLens Team",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

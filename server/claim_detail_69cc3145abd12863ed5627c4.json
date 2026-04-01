@@ -1,0 +1,43 @@
+{
+  "extractedData": {
+    "currency": "USD",
+    "category": "Other",
+    "ocrConfidence": 0
+  },
+  "flags": {
+    "duplicateReceipt": false,
+    "dateMismatch": false,
+    "overLimit": false,
+    "blurryImage": true,
+    "contextualMismatch": false,
+    "anomalousAmount": false
+  },
+  "auditorOverride": {
+    "isOverridden": false
+  },
+  "_id": "69cc3145abd12863ed5627c4",
+  "employee": {
+    "_id": "69c837a7a08de64d2482517c",
+    "name": "Test",
+    "email": "test3@test.com",
+    "location": "default",
+    "seniority": "mid",
+    "complianceScore": 100
+  },
+  "receiptImage": "/uploads/receipt-1774989637500-707546819.png",
+  "receiptFileName": "test_receipt.png",
+  "imageHash": "15d335987efe06c873507118df7f5471",
+  "businessPurpose": "Team dinner meeting with engineering team to discuss Q2 project milestones and deliverables",
+  "claimedDate": "2026-03-30T00:00:00.000Z",
+  "auditStatus": "flagged",
+  "riskLevel": "medium",
+  "policyRulesCited": [],
+  "isDeleted": false,
+  "createdAt": "2026-03-31T20:40:37.536Z",
+  "updatedAt": "2026-04-01T04:54:04.253Z",
+  "__v": 0,
+  "aiExplanation": "Receipt image quality is too low (confidence: 0%). Please resubmit a clearer image.",
+  "processingDurationMs": 81802,
+  "effectiveStatus": "flagged",
+  "id": "69cc3145abd12863ed5627c4"
+}
