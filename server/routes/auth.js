@@ -69,7 +69,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: messages.join(', ') });
     }
     if (err.code === 11000) {
-      return res.status(400).json({ message: 'Email already exists' });
+      const field = Object.keys(err.keyPattern || {})[0] || 'email';
+      return res.status(400).json({ message: `${field === 'email' ? 'Email' : 'Employee ID'} already exists` });
     }
     res.status(500).json({ message: 'Registration failed' });
   }
