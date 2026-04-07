@@ -72,7 +72,7 @@ Corporate expense fraud costs organizations billions annually. Manual auditing i
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/AuditLens.git
+git clone https://github.com/MRN101/AuditLens.git
 cd AuditLens
 ```
 
