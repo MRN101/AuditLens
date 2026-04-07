@@ -6,9 +6,14 @@ import Register from './pages/auth/Register'
 import AppShell from './components/AppShell'
 import UploadReceipt from './pages/employee/UploadReceipt'
 import MyClaims from './pages/employee/MyClaims'
+import EmployeeDashboard from './pages/employee/EmployeeDashboard'
+import PolicyChatbot from './pages/employee/PolicyChatbot'
+import BatchUpload from './pages/employee/BatchUpload'
 import Dashboard from './pages/auditor/Dashboard'
 import Analytics from './pages/auditor/Analytics'
 import PolicyManagement from './pages/auditor/PolicyManagement'
+import ExportData from './pages/auditor/ExportData'
+import Profile from './pages/Profile'
 import NotFound from './pages/NotFound'
 
 function ProtectedRoute({ children, roles }) {
@@ -20,7 +25,7 @@ function ProtectedRoute({ children, roles }) {
 
 function AppRoutes() {
   const { isAuthed, user } = useAuthStore()
-  const defaultPath = user?.role === 'auditor' || user?.role === 'admin' ? '/auditor/dashboard' : '/claims/upload'
+  const defaultPath = user?.role === 'auditor' || user?.role === 'admin' ? '/auditor/dashboard' : '/dashboard'
 
   return (
     <Routes>
@@ -34,11 +39,20 @@ function AppRoutes() {
       }>
         {/* Employee routes */}
         <Route index element={<Navigate to={defaultPath} replace />} />
+        <Route path="dashboard" element={
+          <ProtectedRoute roles={['employee']}><EmployeeDashboard /></ProtectedRoute>
+        } />
         <Route path="claims/upload" element={
           <ProtectedRoute roles={['employee']}><UploadReceipt /></ProtectedRoute>
         } />
+        <Route path="claims/batch" element={
+          <ProtectedRoute roles={['employee']}><BatchUpload /></ProtectedRoute>
+        } />
         <Route path="claims/history" element={
           <ProtectedRoute roles={['employee']}><MyClaims /></ProtectedRoute>
+        } />
+        <Route path="policy/chat" element={
+          <ProtectedRoute roles={['employee']}><PolicyChatbot /></ProtectedRoute>
         } />
         
         {/* Auditor routes */}
@@ -51,6 +65,12 @@ function AppRoutes() {
         <Route path="auditor/policy" element={
           <ProtectedRoute roles={['auditor', 'admin']}><PolicyManagement /></ProtectedRoute>
         } />
+        <Route path="auditor/export" element={
+          <ProtectedRoute roles={['auditor', 'admin']}><ExportData /></ProtectedRoute>
+        } />
+
+        {/* Shared routes */}
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

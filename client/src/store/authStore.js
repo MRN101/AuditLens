@@ -2,27 +2,26 @@ import { create } from 'zustand'
 
 const useAuthStore = create((set) => ({
   user: JSON.parse(localStorage.getItem('user') || 'null'),
-  token: localStorage.getItem('token') || null,
+  token: localStorage.getItem('token'),
   isAuthed: !!localStorage.getItem('token'),
 
-  login: (user, token) => {
-    localStorage.setItem('user', JSON.stringify(user))
-    localStorage.setItem('token', token)
-    set({ user, token, isAuthed: true })
+  login: (userData) => {
+    localStorage.setItem('token', userData.token)
+    localStorage.setItem('user', JSON.stringify(userData))
+    set({ user: userData, token: userData.token, isAuthed: true })
+  },
+
+  setUser: (userData) => {
+    const current = JSON.parse(localStorage.getItem('user') || '{}')
+    const merged = { ...current, ...userData }
+    localStorage.setItem('user', JSON.stringify(merged))
+    set({ user: merged })
   },
 
   logout: () => {
-    localStorage.removeItem('user')
     localStorage.removeItem('token')
+    localStorage.removeItem('user')
     set({ user: null, token: null, isAuthed: false })
-  },
-
-  updateUser: (updates) => {
-    set((state) => {
-      const updated = { ...state.user, ...updates }
-      localStorage.setItem('user', JSON.stringify(updated))
-      return { user: updated }
-    })
   },
 }))
 

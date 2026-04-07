@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const Claim = require('../models/Claim');
 const User = require('../models/User');
+const AuditLog = require('../models/AuditLog');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const auditEngine = require('../services/auditEngine');
@@ -12,7 +13,7 @@ const duplicateService = require('../services/duplicateService');
 router.post('/upload', protect, upload.single('receipt'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'Receipt file is required' });
 
-  const { businessPurpose, claimedDate } = req.body;
+  const { businessPurpose, claimedDate, tripType, claimedAmount, claimedCurrency } = req.body;
   if (!businessPurpose || !claimedDate) {
     return res.status(400).json({ message: 'businessPurpose and claimedDate are required' });
   }
@@ -38,8 +39,16 @@ router.post('/upload', protect, upload.single('receipt'), async (req, res) => {
     imageHash,
     businessPurpose: businessPurpose.trim(),
     claimedDate: parsedDate,
+    claimedAmount: claimedAmount ? Number(claimedAmount) : undefined,
+    claimedCurrency: claimedCurrency || undefined,
+    tripType: tripType || 'domestic',
     auditStatus: 'pending',
     flags: { duplicateReceipt: duplicateCheck.isDuplicate },
+  });
+
+  // Log creation
+  AuditLog.log(claim._id, req.user, 'created', `Claim submitted: ${req.file.originalname}`, {
+    tripType: tripType || 'domestic', claimedAmount, claimedCurrency,
   });
 
   // Trigger async audit (don't await — return immediately)
@@ -61,9 +70,10 @@ router.post('/upload', protect, upload.single('receipt'), async (req, res) => {
 
 // GET /api/claims — Employee gets their own claims
 router.get('/', protect, async (req, res) => {
-  const { page = 1, limit = 10, status } = req.query;
+  const { page = 1, limit = 10, status, tripType } = req.query;
   const filter = { employee: req.user._id, isDeleted: { $ne: true } };
   if (status) filter.auditStatus = status;
+  if (tripType) filter.tripType = tripType;
 
   const [claims, total] = await Promise.all([
     Claim.find(filter)
@@ -97,13 +107,13 @@ router.delete('/:id', protect, async (req, res) => {
   if (claim.employee.toString() !== req.user._id.toString()) {
     return res.status(403).json({ message: 'Access denied' });
   }
-  if (!['pending', 'flagged'].includes(claim.auditStatus)) {
-    return res.status(400).json({ message: 'Only pending or flagged claims can be deleted' });
-  }
+  // Allow deletion of any claim status
 
   claim.isDeleted = true;
   claim.deletedAt = new Date();
   await claim.save();
+
+  AuditLog.log(claim._id, req.user, 'deleted', 'Claim deleted by employee');
 
   // Clean up the uploaded file
   try {
@@ -125,6 +135,8 @@ router.post('/:id/reaudit', protect, async (req, res) => {
   claim.auditStatus = 'pending';
   claim.processingError = null;
   await claim.save();
+
+  AuditLog.log(claim._id, req.user, 'reaudited', 'Re-audit triggered');
 
   const fullPath = path.join(__dirname, '..', 'uploads', path.basename(claim.receiptImage));
   const employee = await User.findById(claim.employee);

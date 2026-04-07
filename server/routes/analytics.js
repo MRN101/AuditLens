@@ -3,9 +3,12 @@ const Claim = require('../models/Claim');
 const User = require('../models/User');
 const { protect, requireRole } = require('../middleware/auth');
 
+const BASE_CURRENCY = process.env.BASE_CURRENCY || 'INR';
+const BASE_SYMBOL = process.env.BASE_CURRENCY_SYMBOL || '₹';
+
 // GET /api/analytics/overview — High-level stats for auditor overview page
 router.get('/overview', protect, requireRole('auditor', 'admin'), async (req, res) => {
-  const { range = '30' } = req.query; // 7, 30, 90, all
+  const { range = '30' } = req.query;
   const baseFilter = { isDeleted: { $ne: true } };
   let rangeFilter = {};
 
@@ -17,18 +20,18 @@ router.get('/overview', protect, requireRole('auditor', 'admin'), async (req, re
 
   const filter = { ...baseFilter, ...rangeFilter };
 
-  const [totalClaims, statusBreakdown, categoryBreakdown, totalSpend, monthlyTrend, avgProcessing] = await Promise.all([
+  const [totalClaims, statusBreakdown, categoryBreakdown, totalSpend, monthlyTrend, avgProcessing, tripTypeBreakdown] = await Promise.all([
     Claim.countDocuments(filter),
     Claim.aggregate([{ $match: filter }, { $group: { _id: '$auditStatus', count: { $sum: 1 } } }]),
-    Claim.aggregate([{ $match: filter }, { $group: { _id: '$extractedData.category', count: { $sum: 1 }, totalAmount: { $sum: '$extractedData.amountUSD' } } }]),
-    Claim.aggregate([{ $match: filter }, { $group: { _id: null, total: { $sum: '$extractedData.amountUSD' } } }]),
+    Claim.aggregate([{ $match: filter }, { $group: { _id: '$extractedData.category', count: { $sum: 1 }, totalAmount: { $sum: '$extractedData.amountBase' } } }]),
+    Claim.aggregate([{ $match: filter }, { $group: { _id: null, total: { $sum: '$extractedData.amountBase' } } }]),
     Claim.aggregate([
       { $match: filter },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           count: { $sum: 1 },
-          amount: { $sum: '$extractedData.amountUSD' },
+          amount: { $sum: '$extractedData.amountBase' },
         },
       },
       { $sort: { _id: 1 } },
@@ -37,13 +40,20 @@ router.get('/overview', protect, requireRole('auditor', 'admin'), async (req, re
       { $match: { ...filter, processingDurationMs: { $gt: 0 } } },
       { $group: { _id: null, avg: { $avg: '$processingDurationMs' } } },
     ]),
+    Claim.aggregate([
+      { $match: filter },
+      { $group: { _id: '$tripType', count: { $sum: 1 }, totalAmount: { $sum: '$extractedData.amountBase' } } },
+    ]),
   ]);
 
   res.json({
     totalClaims,
-    totalSpendUSD: totalSpend[0]?.total || 0,
+    totalSpend: totalSpend[0]?.total || 0,
+    baseCurrency: BASE_CURRENCY,
+    baseSymbol: BASE_SYMBOL,
     byStatus: statusBreakdown.reduce((a, { _id, count }) => ({ ...a, [_id]: count }), {}),
     byCategory: categoryBreakdown,
+    byTripType: tripTypeBreakdown,
     monthlyTrend,
     avgProcessingMs: Math.round(avgProcessing[0]?.avg || 0),
   });
@@ -53,7 +63,7 @@ router.get('/overview', protect, requireRole('auditor', 'admin'), async (req, re
 router.get('/top-offenders', protect, requireRole('auditor', 'admin'), async (req, res) => {
   const offenders = await Claim.aggregate([
     { $match: { isDeleted: { $ne: true }, auditStatus: { $in: ['flagged', 'rejected'] } } },
-    { $group: { _id: '$employee', flagged: { $sum: 1 }, totalAmount: { $sum: '$extractedData.amountUSD' } } },
+    { $group: { _id: '$employee', flagged: { $sum: 1 }, totalAmount: { $sum: '$extractedData.amountBase' } } },
     { $sort: { flagged: -1 } },
     { $limit: 10 },
     {
@@ -87,13 +97,41 @@ router.get('/my', protect, async (req, res) => {
       $group: {
         _id: '$extractedData.category',
         count: { $sum: 1 },
-        totalAmount: { $sum: '$extractedData.amountUSD' },
+        totalAmount: { $sum: '$extractedData.amountBase' },
         approved: { $sum: { $cond: [{ $eq: ['$auditStatus', 'approved'] }, 1, 0] } },
       },
     },
   ]);
+
+  const tripTypeBreakdown = await Claim.aggregate([
+    { $match: { employee: req.user._id, isDeleted: { $ne: true } } },
+    { $group: { _id: '$tripType', count: { $sum: 1 }, totalAmount: { $sum: '$extractedData.amountBase' } } },
+  ]);
+
+  const monthlyTrend = await Claim.aggregate([
+    { $match: { employee: req.user._id, isDeleted: { $ne: true } } },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+        count: { $sum: 1 },
+        amount: { $sum: '$extractedData.amountBase' },
+      },
+    },
+    { $sort: { _id: -1 } },
+    { $limit: 6 },
+  ]);
+
   const user = await User.findById(req.user._id).select('complianceScore totalClaims approvedClaims');
-  res.json({ categoryBreakdown: myClaims, complianceScore: user.complianceScore });
+  res.json({
+    categoryBreakdown: myClaims,
+    tripTypeBreakdown,
+    monthlyTrend,
+    complianceScore: user.complianceScore,
+    totalClaims: user.totalClaims,
+    approvedClaims: user.approvedClaims,
+    baseCurrency: BASE_CURRENCY,
+    baseSymbol: BASE_SYMBOL,
+  });
 });
 
 module.exports = router;

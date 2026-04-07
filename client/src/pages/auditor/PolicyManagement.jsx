@@ -161,6 +161,103 @@ export default function PolicyManagement() {
         </div>
       </div>
 
+      {/* Current audit policy rules */}
+      <div className="card" style={{ marginTop: 24 }}>
+        <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 4 }}>
+          Current Audit Policy Rules
+        </div>
+        <p className="text-xs text-muted" style={{ marginBottom: 16 }}>
+          These rules are enforced by the AI auditor when reviewing expense claims.
+          {policies.some(p => p.isActive) && ' Additional rules from the uploaded policy document are also applied via semantic search.'}
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+          {/* Meal & Dining */}
+          <div style={{ padding: '14px 16px', background: 'var(--bg-inset)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: '1.1rem' }}>🍽️</span>
+              <span className="text-sm" style={{ fontWeight: 600 }}>Meals & Dining</span>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              <li>Daily meal limit: <strong>₹1,500</strong> (domestic) / <strong>$80</strong> (international)</li>
+              <li>Business purpose must be stated for meals above ₹750</li>
+              <li>Alcohol expenses are <strong>not reimbursable</strong></li>
+              <li>Team meals require attendee names for groups &gt; 4</li>
+            </ul>
+          </div>
+
+          {/* Travel */}
+          <div style={{ padding: '14px 16px', background: 'var(--bg-inset)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: '1.1rem' }}>✈️</span>
+              <span className="text-sm" style={{ fontWeight: 600 }}>Travel & Transport</span>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              <li>Economy class for flights under 4 hours</li>
+              <li>Taxi/ride-share requires pickup & drop location</li>
+              <li>Mileage reimbursement: <strong>₹9/km</strong> for personal vehicle</li>
+              <li>Rental cars require prior manager approval</li>
+            </ul>
+          </div>
+
+          {/* Accommodation */}
+          <div style={{ padding: '14px 16px', background: 'var(--bg-inset)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: '1.1rem' }}>🏨</span>
+              <span className="text-sm" style={{ fontWeight: 600 }}>Accommodation</span>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              <li>Nightly limit: <strong>₹5,000</strong> (tier-2 cities) / <strong>₹8,000</strong> (metros)</li>
+              <li>International: up to <strong>$200/night</strong></li>
+              <li>Stays above limit require <strong>prior approval</strong></li>
+              <li>Laundry/minibar charges are <strong>not covered</strong></li>
+            </ul>
+          </div>
+
+          {/* General */}
+          <div style={{ padding: '14px 16px', background: 'var(--bg-inset)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: '1.1rem' }}>📋</span>
+              <span className="text-sm" style={{ fontWeight: 600 }}>General Rules</span>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              <li>Receipts must be submitted within <strong>30 days</strong></li>
+              <li>Claims without valid receipt images are <strong>auto-flagged</strong></li>
+              <li>Duplicate receipts are automatically <strong>rejected</strong></li>
+              <li>Amounts exceeding <strong>2x category average</strong> trigger anomaly review</li>
+            </ul>
+          </div>
+
+          {/* Anomaly Detection */}
+          <div style={{ padding: '14px 16px', background: 'var(--bg-inset)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: '1.1rem' }}>🔍</span>
+              <span className="text-sm" style={{ fontWeight: 600 }}>AI Anomaly Detection</span>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              <li>Z-score analysis against historical employee spending</li>
+              <li>Claims &gt; 2 standard deviations from mean are <strong>flagged</strong></li>
+              <li>Weekend/holiday expense patterns are reviewed</li>
+              <li>Cross-validation: 5-point sanity check on AI extraction</li>
+            </ul>
+          </div>
+
+          {/* Currency & Tax */}
+          <div style={{ padding: '14px 16px', background: 'var(--bg-inset)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+            <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+              <span style={{ fontSize: '1.1rem' }}>💱</span>
+              <span className="text-sm" style={{ fontWeight: 600 }}>Currency & Tax</span>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+              <li>International expenses auto-converted to <strong>INR</strong></li>
+              <li>Exchange rates sourced from ExchangeRate-API (live)</li>
+              <li>GST amounts separated for Input Tax Credit (ITC)</li>
+              <li>Currency-scaled amount validation (₹ vs $ vs € ranges)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <style>{`
         @media (max-width: 768px) {
           div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }

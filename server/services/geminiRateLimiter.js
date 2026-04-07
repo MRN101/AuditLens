@@ -23,10 +23,10 @@ class GeminiRateLimiter {
     this.keyClients = this.apiKeys.map(key => new GoogleGenerativeAI(key));
 
     // --- Model Fallback Chain ---
-    const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const primaryModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
     this.modelChain = [
       primaryModel,
-      ...['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash']
+      ...['gemini-1.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash']
         .filter(m => m !== primaryModel),
     ];
 
@@ -203,6 +203,11 @@ class GeminiRateLimiter {
    */
   setCachedOCR(imageHash, result) {
     if (!imageHash || !result) return;
+    // Don't cache failed / unreadable results — they may be transient API failures
+    if (!result.isReadable || (result.confidence != null && result.confidence < 0.3)) {
+      console.log(`[GeminiRateLimiter] OCR cache SKIP for hash ${imageHash.substring(0, 8)}... (low quality result, conf: ${result.confidence})`);
+      return;
+    }
     // Evict oldest entries if cache is full
     if (this.ocrCache.size >= this.maxCacheSize) {
       const firstKey = this.ocrCache.keys().next().value;
@@ -218,9 +223,15 @@ class GeminiRateLimiter {
    * Generate text content (for LLM audit prompts).
    * Automatically handles queue, rotation, fallback, and retry.
    */
-  async generateContent(prompt) {
+  async generateContent(prompt, opts = {}) {
     return this.enqueue((client, modelName) => {
-      const model = client.getGenerativeModel({ model: modelName });
+      const config = { model: modelName };
+      const genCfg = { temperature: 0 };
+      if (opts.jsonMode !== false) {
+        genCfg.responseMimeType = 'application/json';
+      }
+      config.generationConfig = genCfg;
+      const model = client.getGenerativeModel(config);
       return model.generateContent(prompt);
     }, { useModelFallback: true });
   }
@@ -229,9 +240,15 @@ class GeminiRateLimiter {
    * Generate content with image (for OCR / multimodal).
    * Automatically handles queue, rotation, fallback, and retry.
    */
-  async generateContentWithImage(imageData, prompt) {
+  async generateContentWithImage(imageData, prompt, opts = {}) {
     return this.enqueue((client, modelName) => {
-      const model = client.getGenerativeModel({ model: modelName });
+      const config = { model: modelName };
+      const genCfg = { temperature: 0 };
+      if (opts.jsonMode !== false) {
+        genCfg.responseMimeType = 'application/json';
+      }
+      config.generationConfig = genCfg;
+      const model = client.getGenerativeModel(config);
       return model.generateContent([imageData, prompt]);
     }, { useModelFallback: true });
   }

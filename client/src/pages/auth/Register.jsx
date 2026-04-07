@@ -61,7 +61,23 @@ export default function Register() {
 
   return (
     <div className="auth-layout">
-      <div className="auth-card" style={{ maxWidth: 440 }}>
+      <div className="auth-hero">
+        <div className="auth-hero__content">
+          <div className="auth-hero__badge">Get Started in 30 seconds</div>
+          <h1 className="auth-hero__title">
+            Join your team on<br />
+            <span>AuditLens</span>
+          </h1>
+          <p className="auth-hero__subtitle">
+            Create your account to start submitting expenses or reviewing claims. Our AI handles the heavy lifting — you focus on your work.
+          </p>
+        </div>
+        <div className="auth-hero__glow auth-hero__glow--1" />
+        <div className="auth-hero__glow auth-hero__glow--2" />
+      </div>
+
+      <div className="auth-form-panel">
+      <div className="auth-card" style={{ maxWidth: 420 }}>
         <div className="auth-card__logo">
           <h1>Audit<span>Lens</span></h1>
           <p>Create your account</p>
@@ -147,6 +163,7 @@ export default function Register() {
         <div className="auth-card__footer">
           Already have an account? <Link to="/login">Sign in</Link>
         </div>
+      </div>
       </div>
     </div>
   )

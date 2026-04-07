@@ -24,18 +24,12 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: mode !== 'production',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production',
-      },
-    },
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
-          state: ['zustand', 'axios'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router')) return 'vendor';
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) return 'charts';
+          if (id.includes('node_modules/zustand') || id.includes('node_modules/axios')) return 'state';
         },
       },
     },

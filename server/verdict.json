@@ -1,0 +1,19 @@
+{
+  "status": "flagged",
+  "risk": "low",
+  "explanation": "No specific policy rules were found for the Meals category, requiring the claim to be flagged for review based on general prudent expense judgment.",
+  "flags": {
+    "duplicateReceipt": false,
+    "dateMismatch": false,
+    "overLimit": false,
+    "blurryImage": false,
+    "notAReceipt": false,
+    "mathError": false,
+    "contextualMismatch": false,
+    "anomalousAmount": false,
+    "amountMismatch": false
+  },
+  "rules": [
+    "No specific policy rules found for this category. Apply general prudent expense judgment."
+  ]
+}

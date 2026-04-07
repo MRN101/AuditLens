@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, FileImage, X, Calendar, AlignLeft, Loader2, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react'
+import { Upload, FileImage, X, Calendar, AlignLeft, Loader2, CheckCircle2, AlertTriangle, ArrowRight, Home, Plane, IndianRupee } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { claimsAPI } from '../../services/api'
+import { claimsAPI, budgetAPI } from '../../services/api'
+import { formatBase, BASE_SYMBOL } from '../../utils/currencyUtils'
 
 const STEPS = [
   { label: 'Upload', desc: 'Drop your receipt' },
@@ -16,9 +17,18 @@ export default function UploadReceipt() {
   const [preview, setPreview] = useState(null)
   const [businessPurpose, setBusinessPurpose] = useState('')
   const [claimedDate, setClaimedDate] = useState('')
+  const [tripType, setTripType] = useState('domestic')
+  const [claimedAmount, setClaimedAmount] = useState('')
+  const [claimedCurrency, setClaimedCurrency] = useState('INR')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [step, setStep] = useState(0)
+  const [budget, setBudget] = useState(null)
+
+  // Load budget on mount
+  useEffect(() => {
+    budgetAPI.getMy().then(({ data }) => setBudget(data)).catch(() => {})
+  }, [])
 
   const onDrop = useCallback((accepted) => {
     if (accepted.length > 0) {
@@ -27,7 +37,6 @@ export default function UploadReceipt() {
       setResult(null)
       setStep(1)
       if (f.type.startsWith('image/')) {
-        // Compress image before preview
         const reader = new FileReader()
         reader.onload = () => setPreview(reader.result)
         reader.readAsDataURL(f)
@@ -59,6 +68,11 @@ export default function UploadReceipt() {
     formData.append('receipt', file)
     formData.append('claimedDate', claimedDate)
     formData.append('businessPurpose', businessPurpose.trim())
+    formData.append('tripType', tripType)
+    if (claimedAmount) {
+      formData.append('claimedAmount', claimedAmount)
+      formData.append('claimedCurrency', claimedCurrency)
+    }
 
     try {
       const { data } = await claimsAPI.upload(formData)
@@ -69,6 +83,7 @@ export default function UploadReceipt() {
       setPreview(null)
       setBusinessPurpose('')
       setClaimedDate('')
+      setClaimedAmount('')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Upload failed')
       setStep(1)
@@ -95,14 +110,13 @@ export default function UploadReceipt() {
               <div className="progress-step__dot">{step > i ? '✓' : i + 1}</div>
               <div>
                 <div style={{ fontWeight: 550 }}>{s.label}</div>
-                <div className="text-xs text-muted" style={{ display: 'none' }}>{s.desc}</div>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }}>
         {/* Main form */}
         <form onSubmit={handleSubmit}>
           {/* Dropzone */}
@@ -149,6 +163,22 @@ export default function UploadReceipt() {
           <div className="card">
             <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 16 }}>Claim Details</div>
 
+            {/* Trip Type */}
+            <div className="form-group">
+              <label className="form-label">Trip Type</label>
+              <div className="flex gap-3">
+                <button type="button" className={`btn btn--sm ${tripType === 'domestic' ? 'btn--primary' : 'btn--secondary'}`} onClick={() => setTripType('domestic')}>
+                  <Home size={13} /> Domestic 🇮🇳
+                </button>
+                <button type="button" className={`btn btn--sm ${tripType === 'international' ? 'btn--primary' : 'btn--secondary'}`} onClick={() => setTripType('international')}>
+                  <Plane size={13} /> International 🌍
+                </button>
+              </div>
+              <div className="form-hint">
+                {tripType === 'international' ? 'International limits apply. Receipt will be converted to ₹' : 'Standard domestic expense limits apply'}
+              </div>
+            </div>
+
             <div className="form-group">
               <label className="form-label" htmlFor="claim-date">
                 <Calendar size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
@@ -162,6 +192,34 @@ export default function UploadReceipt() {
                 onChange={(e) => setClaimedDate(e.target.value)}
               />
               <div className="form-hint">Must match the date on your receipt</div>
+            </div>
+
+            {/* Optional claimed amount */}
+            <div className="form-group">
+              <label className="form-label">
+                <IndianRupee size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -1 }} />
+                Expected Amount <span className="text-muted">(optional)</span>
+              </label>
+              <div className="flex gap-3">
+                <select className="form-select" value={claimedCurrency} onChange={e => setClaimedCurrency(e.target.value)} style={{ width: 90 }}>
+                  <option value="INR">₹ INR</option>
+                  <option value="USD">$ USD</option>
+                  <option value="EUR">€ EUR</option>
+                  <option value="GBP">£ GBP</option>
+                  <option value="SGD">S$ SGD</option>
+                  <option value="AED">AED</option>
+                </select>
+                <input
+                  className="form-input"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={claimedAmount}
+                  onChange={e => setClaimedAmount(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+              </div>
+              <div className="form-hint">Enter the amount if you know it — system will cross-validate with OCR</div>
             </div>
 
             <div className="form-group">
@@ -199,7 +257,7 @@ export default function UploadReceipt() {
           </div>
         </form>
 
-        {/* Side info panel */}
+        {/* Side panel */}
         <div className="flex flex-col gap-4">
           {result && (
             <div className="card" style={{ borderColor: result.isDuplicate ? 'var(--amber)' : 'var(--green)' }}>
@@ -220,6 +278,32 @@ export default function UploadReceipt() {
               <a href="/claims/history" className="btn btn--secondary btn--sm w-full" style={{ marginTop: 12 }}>
                 View in My Claims <ArrowRight size={14} />
               </a>
+            </div>
+          )}
+
+          {/* Budget sidebar */}
+          {budget && (
+            <div className="card">
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 12 }}>
+                Monthly Budget <span className="text-xs text-muted">({budget.summary?.month})</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {(budget.budget || []).filter(b => b.spent > 0 || b.percentage > 0).slice(0, 5).map(b => (
+                  <div key={b.category}>
+                    <div className="flex items-center justify-between text-xs" style={{ marginBottom: 4 }}>
+                      <span style={{ fontWeight: 500 }}>{b.category}</span>
+                      <span className="text-muted">{formatBase(b.spent)} / {formatBase(b.limit)}</span>
+                    </div>
+                    <div style={{ height: 4, borderRadius: 2, background: 'var(--bg-elevated)', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 2, width: `${Math.min(100, b.percentage)}%`,
+                        background: b.status === 'exceeded' ? 'var(--red)' : b.status === 'warning' ? 'var(--amber)' : 'var(--green)',
+                        transition: 'width 0.5s ease',
+                      }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

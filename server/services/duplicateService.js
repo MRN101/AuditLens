@@ -21,11 +21,18 @@ async function computeHash(filePath) {
  * Excludes the submitting employee's own previous claim for the same hash
  * to flag cross-employee duplicate submission (same receipt submitted by two people).
  */
-async function findDuplicate(imageHash, employeeId) {
+async function findDuplicate(imageHash, employeeId, excludeTripId) {
   if (!imageHash) return { isDuplicate: false };
 
-  const existing = await Claim.findOne({
+  const baseFilter = {
     imageHash,
+    isDeleted: { $ne: true },
+  };
+  // Exclude claims from the same trip (batch upload)
+  if (excludeTripId) baseFilter.tripId = { $ne: excludeTripId };
+
+  const existing = await Claim.findOne({
+    ...baseFilter,
     employee: { $ne: employeeId },  // from a different employee
   }).select('_id employee createdAt').lean();
 
@@ -33,9 +40,9 @@ async function findDuplicate(imageHash, employeeId) {
     return { isDuplicate: true, originalClaimId: existing._id, originalSubmittedAt: existing.createdAt };
   }
 
-  // Also check same employee submitting twice
+  // Also check same employee submitting twice (outside current trip)
   const selfDuplicate = await Claim.findOne({
-    imageHash,
+    ...baseFilter,
     employee: employeeId,
   }).select('_id createdAt').lean();
 

@@ -1,19 +1,19 @@
 const router = require('express').Router();
 const Claim = require('../models/Claim');
 const User = require('../models/User');
+const AuditLog = require('../models/AuditLog');
 const { protect, requireRole } = require('../middleware/auth');
+const { sendOverrideEmail } = require('../services/emailService');
 
 // GET /api/auditor/claims — All claims sorted by risk for auditor dashboard
 router.get('/claims', protect, requireRole('auditor', 'admin'), async (req, res) => {
-  const { page = 1, limit = 20, status, riskLevel, search } = req.query;
+  const { page = 1, limit = 20, status, riskLevel, search, tripType } = req.query;
   const filter = { isDeleted: { $ne: true } };
   if (status) filter.auditStatus = status;
   if (riskLevel) filter.riskLevel = riskLevel;
+  if (tripType) filter.tripType = tripType;
 
   const riskOrder = { high: 0, medium: 1, low: 2 };
-
-  let query = Claim.find(filter)
-    .populate('employee', 'name email location seniority department complianceScore');
 
   // Text search on merchant name or business purpose
   if (search && search.trim()) {
@@ -75,10 +75,14 @@ router.patch('/claims/:id/override', protect, requireRole('auditor', 'admin'), a
 
   if (!claim) return res.status(404).json({ message: 'Claim not found' });
 
+  // Log override
+  AuditLog.log(claim._id, req.user, 'overridden', `Status changed to ${status}: "${comment}"`, {
+    previousStatus: claim.auditStatus, newStatus: status,
+  });
+
   // Update employee compliance score correctly
   const employee = await User.findById(claim.employee._id);
   if (employee) {
-    // Recalculate from all claims
     const allClaims = await Claim.find({
       employee: employee._id,
       auditStatus: { $in: ['approved', 'flagged', 'rejected'] },
@@ -101,6 +105,9 @@ router.patch('/claims/:id/override', protect, requireRole('auditor', 'admin'), a
       message: `Your claim has been reviewed: ${status.toUpperCase()}`,
     });
   }
+
+  // Send email (fire-and-forget)
+  sendOverrideEmail(claim.employee, claim, status, comment).catch(() => {});
 
   res.json({ message: 'Override applied', claim });
 });
@@ -129,6 +136,11 @@ router.post('/claims/bulk-override', protect, requireRole('auditor', 'admin'), a
     }
   );
 
+  // Log each override
+  for (const id of claimIds) {
+    AuditLog.log(id, req.user, 'overridden', `Bulk override to ${status}: "${comment}"`);
+  }
+
   const io = req.app.get('io');
   if (io) {
     const claims = await Claim.find({ _id: { $in: claimIds } }).select('employee');
@@ -145,7 +157,7 @@ router.post('/claims/bulk-override', protect, requireRole('auditor', 'admin'), a
 router.get('/stats', protect, requireRole('auditor', 'admin'), async (req, res) => {
   const baseFilter = { isDeleted: { $ne: true } };
 
-  const [statusCounts, riskCounts, recentActivity, avgProcessing] = await Promise.all([
+  const [statusCounts, riskCounts, recentActivity, avgProcessing, tripTypeCounts] = await Promise.all([
     Claim.aggregate([{ $match: baseFilter }, { $group: { _id: '$auditStatus', count: { $sum: 1 } } }]),
     Claim.aggregate([{ $match: baseFilter }, { $group: { _id: '$riskLevel', count: { $sum: 1 } } }]),
     Claim.find({ ...baseFilter, auditStatus: { $ne: 'pending' } })
@@ -156,12 +168,14 @@ router.get('/stats', protect, requireRole('auditor', 'admin'), async (req, res) 
       { $match: { ...baseFilter, processingDurationMs: { $gt: 0 } } },
       { $group: { _id: null, avg: { $avg: '$processingDurationMs' } } },
     ]),
+    Claim.aggregate([{ $match: baseFilter }, { $group: { _id: '$tripType', count: { $sum: 1 }, totalAmount: { $sum: '$extractedData.amountBase' } } }]),
   ]);
 
   const toMap = (arr) => arr.reduce((acc, { _id, count }) => ({ ...acc, [_id]: count }), {});
   res.json({
     byStatus: toMap(statusCounts),
     byRisk: toMap(riskCounts),
+    byTripType: tripTypeCounts,
     recentActivity,
     avgProcessingMs: Math.round(avgProcessing[0]?.avg || 0),
   });

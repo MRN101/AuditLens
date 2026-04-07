@@ -20,6 +20,12 @@ const claimsRoutes = require('./routes/claims');
 const auditorRoutes = require('./routes/auditor');
 const policyRoutes = require('./routes/policy');
 const analyticsRoutes = require('./routes/analytics');
+const chatbotRoutes = require('./routes/chatbot');
+const tripsRoutes = require('./routes/trips');
+const budgetRoutes = require('./routes/budget');
+const reportsRoutes = require('./routes/reports');
+const auditlogRoutes = require('./routes/auditlog');
+const exportRoutes = require('./routes/export');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -92,6 +98,12 @@ app.use('/api/claims', claimsRoutes);
 app.use('/api/auditor', auditorRoutes);
 app.use('/api/policy', policyRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/trips', tripsRoutes);
+app.use('/api/budget', budgetRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/auditlog', auditlogRoutes);
+app.use('/api/export', exportRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

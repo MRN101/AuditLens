@@ -31,6 +31,8 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
   getMe: () => api.get('/auth/me'),
+  updateProfile: (data) => api.patch('/auth/profile', data),
+  changePassword: (data) => api.post('/auth/change-password', data),
 }
 
 // Claims (Employee)
@@ -71,6 +73,46 @@ export const analyticsAPI = {
   overview: (params) => api.get('/analytics/overview', { params }),
   topOffenders: () => api.get('/analytics/top-offenders'),
   my: () => api.get('/analytics/my'),
+}
+
+// Chatbot
+export const chatbotAPI = {
+  ask: (question) => api.post('/chatbot/ask', { question }),
+  suggested: () => api.get('/chatbot/suggested'),
+}
+
+// Trips
+export const tripsAPI = {
+  create: (data) => api.post('/trips', data),
+  uploadReceipts: (tripId, formData) =>
+    api.post(`/trips/${tripId}/receipts`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    }),
+  getMyTrips: (params) => api.get('/trips', { params }),
+  getTrip: (id) => api.get(`/trips/${id}`),
+}
+
+// Budget
+export const budgetAPI = {
+  getMy: () => api.get('/budget/my'),
+}
+
+// Reports
+export const reportsAPI = {
+  downloadClaimPDF: (id) => api.get(`/reports/claim/${id}`, { responseType: 'blob' }),
+}
+
+// Audit Log
+export const auditLogAPI = {
+  getForClaim: (claimId) => api.get(`/auditlog/${claimId}`),
+  getRecent: (params) => api.get('/auditlog', { params }),
+}
+
+// Export
+export const exportAPI = {
+  summary: (params) => api.get('/export/summary', { params }),
+  downloadCSV: (params) => api.get('/export/claims', { params, responseType: 'blob' }),
 }
 
 export default api

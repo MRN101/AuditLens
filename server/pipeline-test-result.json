@@ -1,0 +1,68 @@
+{
+  "status": "flagged",
+  "lineItems": [
+    {
+      "description": "TURKEY CLUB SANDWICH",
+      "quantity": 1,
+      "unitPrice": 18.5,
+      "totalPrice": 18.5
+    },
+    {
+      "description": "CAESAR SALAD",
+      "quantity": 1,
+      "unitPrice": 14,
+      "totalPrice": 14
+    },
+    {
+      "description": "ICED TEA",
+      "quantity": 1,
+      "unitPrice": 4.5,
+      "totalPrice": 4.5
+    }
+  ],
+  "taxBreakdown": {
+    "subtotal": 37,
+    "taxAmount": 3.28,
+    "taxPercent": 8.875,
+    "tipAmount": 8,
+    "discountAmount": null,
+    "serviceCharge": null,
+    "total": 48.28,
+    "mathValid": true,
+    "mathDetails": "subtotal(37) + tax(3.28) + tip(8) = total(48.28) — correct"
+  },
+  "corrections": [
+    {
+      "field": "date",
+      "old": "2026-03-30",
+      "new": "2024-03-30",
+      "reason": "Date '2026-03-30' is in the future; corrected year to '2024' as a plausible OCR correction for a deli receipt."
+    }
+  ],
+  "classification": {
+    "isReceipt": true,
+    "documentType": "receipt"
+  },
+  "duplicate": {
+    "isDuplicate": false
+  },
+  "flags": {
+    "dateMismatch": true,
+    "overLimit": false,
+    "duplicateReceipt": false,
+    "blurryImage": false,
+    "notAReceipt": false,
+    "mathError": false,
+    "contextualMismatch": true,
+    "anomalousAmount": false,
+    "amountMismatch": false
+  },
+  "amount": 48.28,
+  "currency": "USD",
+  "amountBase": 4502.27,
+  "baseCurrency": "INR",
+  "paymentMethod": "card",
+  "merchant": "BROOKLYN DELI",
+  "processingMs": 43214,
+  "explanation": "The expense is flagged due to a contextual mismatch between the declared international trip type and the local New York merchant for an employee based in New York, coupled with a team lunch claimed on a Saturday."
+}
